@@ -1,0 +1,113 @@
+# RS Monorepo - Local Development
+# Usage: docker compose up -d
+# Individual: docker compose up api -d
+
+networks:
+  realestate_network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+  redis-data:
+  postgres-data:
+
+services:
+  # ============================================
+  # Infrastructure
+  # ============================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: rs_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-abc123}
+      POSTGRES_DB: ${POSTGRES_DB:-realestate}
+      TZ: Asia/Seoul
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - realestate_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo:
+    image: mongo:7
+    container_name: rs_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-abc123}
+    networks:
+      - realestate_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: rs_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - realestate_network
+
+  # ============================================
+  # API Service
+  # ============================================
+  api:
+    container_name: rs_api
+    build:
+      context: ./apps/api
+      dockerfile: docker/api/Dockerfile
+    ports:
+      - "8000:80"
+      - "5678:5678"  # debugpy
+    env_file:
+      - ./apps/api/.env.dev
+    volumes:
+      - ./apps/api/src:/api/src
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/api/src
+          target: /api/src
+        - action: rebuild
+          path: ./apps/api/pyproject.toml
+    restart: unless-stopped
+    networks:
+      - realestate_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_started
+      redis:
+        condition: service_started
+
+  # ============================================
+  # Observability
+  # ============================================
+  langfuse:
+    image: langfuse/langfuse:2
+    container_name: rs_langfuse
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-abc123}@postgres:5432/langfuse
+      NEXTAUTH_SECRET: ${LANGFUSE_SECRET:-change-in-production}
+      NEXTAUTH_URL: http://localhost:3000
+      SALT: ${LANGFUSE_SALT:-change-in-production}
+      TELEMETRY_ENABLED: "false"
+    restart: unless-stopped
+    networks:
+      - realestate_network
+    depends_on:
+      postgres:
+        condition: service_healthy

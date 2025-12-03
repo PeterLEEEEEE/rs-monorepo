@@ -92,6 +92,22 @@ services:
         condition: service_started
 
   # ============================================
+  # Web Frontend
+  # ============================================
+  web:
+    container_name: rs_web
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    networks:
+      - realestate_network
+    depends_on:
+      - api
+
+  # ============================================
   # Observability
   # ============================================
   langfuse:

@@ -1,39 +1,134 @@
+# ========================================
 # Dependencies
+# ========================================
 node_modules/
+.pnpm-store/
+.yarn/
 .venv/
 __pycache__/
 *.pyc
+*.pyo
+*.egg-info/
+wheels/
 
-# Environment
+# ========================================
+# Environment & Secrets
+# ========================================
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+secrets.json
 
-# IDE
+# ========================================
+# Build outputs
+# ========================================
+dist/
+build/
+.next/
+out/
+*.egg-info/
+*.whl
+
+# ========================================
+# IDE & Editors
+# ========================================
 .idea/
 .vscode/
 *.swp
 *.swo
+*.sw?
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+.project
+.classpath
+.settings/
 
-# Build outputs
-dist/
-build/
-.next/
-*.egg-info/
+# ========================================
+# OS Files
+# ========================================
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
 
-# Logs
+# ========================================
+# Logs & Debug
+# ========================================
 *.log
 logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Testing
+# ========================================
+# Testing & Coverage
+# ========================================
 .coverage
 htmlcov/
 .pytest_cache/
+.nyc_output/
+coverage/
+*.lcov
 
-# Misc
+# ========================================
+# Docker
+# ========================================
+*.pid
+*.seed
+*.pid.lock
+
+# ========================================
+# Temporary files
+# ========================================
 *.bak
 *.tmp
+*.temp
+.cache/
+.temp/
+temp/
+tmp/
+
+# ========================================
+# Python specific
+# ========================================
+*.py[cod]
+*$py.class
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+
+# ========================================
+# Node specific
+# ========================================
+*.local
+.turbo/
+.vercel/
+.output/
+
+# ========================================
+# Jupyter
+# ========================================
+*.ipynb
+.ipynb_checkpoints/
+
+# ========================================
+# Data & Misc
+# ========================================
+data/
+*.sqlite
+*.db
+*.csv
+!fixtures/*.csv

@@ -1,0 +1,13 @@
+services:
+  
+  mongo:
+    env_file:
+      - .env.dev
+
+  postgres:
+    env_file:
+      - .env.dev
+
+  redis:
+    env_file:
+      - .env.dev

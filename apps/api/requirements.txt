@@ -1,0 +1,14 @@
+motor
+logger
+pymongo
+pymongoarrow
+requests
+ipykernel
+langgraph
+langchain_core
+langchain-openai
+pydantic
+openai-agents
+nest_asyncio
+python-dotenv
+langgraph-checkpoint-redis

@@ -1,0 +1,45 @@
+version: 2
+
+models:
+  - name: stg_real_prices
+    description: "실거래가 Silver Layer - Bronze에서 JSONB 파싱 및 평형 정보 JOIN"
+    columns:
+      - name: complex_id
+        description: "단지 ID"
+        tests:
+          - not_null
+
+      - name: pyeong_id
+        description: "평형 ID"
+        tests:
+          - not_null
+
+      - name: floor
+        description: "층수 (1~100)"
+        tests:
+          - not_null
+
+      - name: trade_date
+        description: "거래일"
+        tests:
+          - not_null
+
+      - name: deal_price
+        description: "거래가격 (만원)"
+        tests:
+          - not_null
+
+      - name: trade_type
+        description: "거래 유형 (A1=매매)"
+
+      - name: area_m
+        description: "평형명 (제곱미터 기준: 86A, 91A)"
+
+      - name: area_p
+        description: "평형명 (평 기준: 26A, 27A)"
+
+      - name: exclusive_area_sqm
+        description: "전용면적 (㎡)"
+
+      - name: exclusive_area_pyeong
+        description: "전용면적 (평)"

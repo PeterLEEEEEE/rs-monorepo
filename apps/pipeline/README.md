@@ -1,45 +1,156 @@
-Overview
-========
+# Pipeline - Airflow + dbt
 
-Welcome to Astronomer! This project was generated after you ran 'astro dev init' using the Astronomer CLI. This readme describes the contents of the project, as well as how to run Apache Airflow on your local machine.
+Real estate data pipeline for collection and transformation (ELT).
 
-Project Contents
-================
+## Stack
 
-Your Astro project contains the following files and folders:
+- Python 3.12
+- Apache Airflow 3.x (Astronomer Runtime)
+- dbt-core + dbt-postgres
+- astronomer-cosmos
+- PostgreSQL (PostGIS + pgvector)
 
-- dags: This folder contains the Python files for your Airflow DAGs. By default, this directory includes one example DAG:
-    - `example_astronauts`: This DAG shows a simple ETL pipeline example that queries the list of astronauts currently in space from the Open Notify API and prints a statement for each astronaut. The DAG uses the TaskFlow API to define tasks in Python, and dynamic task mapping to dynamically print a statement for each astronaut. For more on how this DAG works, see our [Getting started tutorial](https://www.astronomer.io/docs/learn/get-started-with-airflow).
-- Dockerfile: This file contains a versioned Astro Runtime Docker image that provides a differentiated Airflow experience. If you want to execute other commands or overrides at runtime, specify them here.
-- include: This folder contains any additional files that you want to include as part of your project. It is empty by default.
-- packages.txt: Install OS-level packages needed for your project by adding them to this file. It is empty by default.
-- requirements.txt: Install Python packages needed for your project by adding them to this file. It is empty by default.
-- plugins: Add custom or community plugins for your project to this file. It is empty by default.
-- airflow_settings.yaml: Use this local-only file to specify Airflow Connections, Variables, and Pools instead of entering them in the Airflow UI as you develop DAGs in this project.
+## Structure
 
-Deploy Your Project Locally
-===========================
+```
+apps/pipeline/
+├── dags/                    # Airflow DAG definitions
+│   ├── dags_realestate_api.py   # API data collection
+│   ├── dags_realestate_dbt.py   # dbt transformation
+│   ├── dags_region_init.py      # Region initialization
+│   └── common_tasks.py          # Shared utilities
+├── dbt/                     # dbt project
+│   ├── models/
+│   │   ├── staging/         # Bronze → Silver
+│   │   └── marts/           # Silver → Gold
+│   ├── profiles/            # Connection profiles
+│   └── dbt_project.yml
+├── src/                     # Python modules for DAGs
+├── plugins/                 # Custom Airflow plugins
+├── Dockerfile               # Astronomer runtime image
+└── docker-compose.override.yml
+```
 
-Start Airflow on your local machine by running 'astro dev start'.
+## Quick Start
 
-This command will spin up five Docker containers on your machine, each for a different Airflow component:
+### Prerequisites
 
-- Postgres: Airflow's Metadata Database
-- Scheduler: The Airflow component responsible for monitoring and triggering tasks
-- DAG Processor: The Airflow component responsible for parsing DAGs
-- API Server: The Airflow component responsible for serving the Airflow UI and API
-- Triggerer: The Airflow component responsible for triggering deferred tasks
+- [Astro CLI](https://www.astronomer.io/docs/astro/cli/install-cli)
+- Docker
 
-When all five containers are ready the command will open the browser to the Airflow UI at http://localhost:8080/. You should also be able to access your Postgres Database at 'localhost:5432/postgres' with username 'postgres' and password 'postgres'.
+### Start Airflow
 
-Note: If you already have either of the above ports allocated, you can either [stop your existing Docker containers or change the port](https://www.astronomer.io/docs/astro/cli/troubleshoot-locally#ports-are-not-available-for-my-local-airflow-webserver).
+```bash
+cd apps/pipeline
 
-Deploy Your Project to Astronomer
-=================================
+# Start Airflow (spins up 5 containers)
+astro dev start
 
-If you have an Astronomer account, pushing code to a Deployment on Astronomer is simple. For deploying instructions, refer to Astronomer documentation: https://www.astronomer.io/docs/astro/deploy-code/
+# Stop Airflow
+astro dev stop
 
-Contact
-=======
+# Restart after changes
+astro dev restart
 
-The Astronomer CLI is maintained with love by the Astronomer team. To report a bug or suggest a change, reach out to our support.
+# View logs
+astro dev logs
+
+# Access Airflow shell
+astro dev bash
+```
+
+**Airflow UI**: http://localhost:8080
+
+### After Reboot
+
+```bash
+# 1. Start infrastructure first (from monorepo root)
+cd /path/to/rs
+docker compose up -d
+
+# 2. Start Airflow
+cd apps/pipeline
+astro dev start
+```
+
+## Database
+
+Uses shared PostgreSQL (`rs_postgres`):
+
+| Setting | Value |
+|---------|-------|
+| Host (container) | `rs_postgres` |
+| Host (local) | `localhost` |
+| Port (container) | `5432` |
+| Port (local) | `5434` |
+| Database | `realestate` |
+| User | `admin` |
+| Password | (see .env) |
+
+### Schemas
+
+- `staging`: dbt staging models (incremental)
+- `marts`: dbt mart models (tables)
+
+## dbt
+
+### Local Development
+
+```bash
+cd apps/pipeline/dbt
+
+# Test connection
+dbt debug --profiles-dir profiles --target dev
+
+# Run models
+dbt run --profiles-dir profiles --target dev
+
+# Run specific model
+dbt run --profiles-dir profiles --target dev --select staging.stg_apartments
+```
+
+### Inside Airflow Container
+
+```bash
+# Enter container
+astro dev bash
+
+# Run dbt
+dbt run --project-dir $DBT_PROJECT_DIR --profiles-dir $DBT_PROFILES_DIR --target docker
+```
+
+### Profiles
+
+`dbt/profiles/profiles.yml` has two targets:
+
+- `dev`: Local development (localhost:5434)
+- `docker`: Inside Airflow container (rs_postgres:5432)
+
+**Note**: dbt uses environment variables for credentials. Set `DBT_PASSWORD` before running.
+
+## DAGs
+
+| DAG | Description |
+|-----|-------------|
+| `dags_realestate_api_to_postgres` | Collect data from Naver API |
+| `dags_realestate_dbt` | Run dbt transformations |
+| `dags_region_init_yearly` | Initialize region data |
+
+## Testing
+
+```bash
+# Validate DAG syntax
+astro dev pytest tests/
+
+# Or manually
+python -c "from airflow.models import DagBag; db = DagBag(); print(db.import_errors)"
+```
+
+## Network
+
+Airflow containers connect to `realestate_network` to access:
+- `rs_postgres` - Main PostgreSQL
+- `rs_mongo` - MongoDB
+- `rs_redis` - Redis
+
+This is configured in `docker-compose.override.yml`.

@@ -1,8 +1,14 @@
--- PostGIS
+-- =============================================================================
+-- EXTENSIONS
+-- =============================================================================
 CREATE EXTENSION IF NOT EXISTS postgis;
-
--- pgvector
 CREATE EXTENSION IF NOT EXISTS vector;
+
+-- =============================================================================
+-- LANGFUSE DATABASE (for LLM observability)
+-- =============================================================================
+SELECT 'CREATE DATABASE langfuse'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'langfuse')\gexec
 
 -- =============================================================================
 -- SCHEMA 생성

@@ -7,20 +7,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Real Estate Agent Platform - Monorepo containing:
 - **API** (`apps/api/`): FastAPI multi-agent chatbot service
 - **Pipeline** (`apps/pipeline/`): Airflow data pipeline (ELT)
-- **Web** (`apps/web/`): Frontend (planned - Next.js)
+- **Web** (`apps/web/`): React frontend
 
 ## Monorepo Structure
 
 ```
-rs-monorepo/
+rs/
+├── docker/               # Shared infrastructure
+│   ├── postgres/         # PostgreSQL (PostGIS + pgvector)
+│   ├── mongo/            # MongoDB
+│   └── redis/            # Redis
 ├── apps/
-│   ├── api/          # FastAPI, LangGraph, LangChain
-│   ├── pipeline/     # Airflow, dbt
-│   └── web/          # Next.js (planned)
+│   ├── api/              # FastAPI, LangGraph, LangChain
+│   ├── pipeline/         # Airflow, dbt
+│   └── web/              # React + Vite
 ├── packages/
-│   └── shared-types/ # Shared TypeScript types
+│   └── shared-types/     # Shared TypeScript types
 ├── .github/
-│   └── workflows/    # CI/CD per app (path-filtered)
+│   └── workflows/        # CI/CD per app (path-filtered)
 └── docker-compose.yml
 ```
 
@@ -50,10 +54,11 @@ Each app has its own CLAUDE.md with specific guidance:
 | Service | Port | Description |
 |---------|------|-------------|
 | API | 8000 | FastAPI backend |
-| PostgreSQL | 5432 | Main database |
+| PostgreSQL | 5434 | Main database (PostGIS + pgvector) |
 | MongoDB | 27017 | Document storage |
 | Redis | 6379 | Cache, checkpoints |
 | Langfuse | 3000 | LLM observability |
+| Web | 80 | React frontend |
 
 ### Network
 All services use `realestate_network` for inter-container communication.

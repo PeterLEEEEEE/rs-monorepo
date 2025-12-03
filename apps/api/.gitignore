@@ -12,7 +12,8 @@ data
 temp
 
 .env
-.env*
+.env.*
+!.env.example
 
 main.py
 *.ipynb

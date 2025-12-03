@@ -1,0 +1,85 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Bronze layer - API에서 수집한 원본 데이터 (JSONB payload)"
+    database: realestate_stg_db  # 실제 DB명으로 변경 필요
+    schema: raw
+    tables:
+      - name: complexes
+        description: "아파트 단지 기본 정보"
+        columns:
+          - name: complex_no
+            description: "단지 번호 (PK)"
+            tests:
+              - unique
+              - not_null
+          - name: payload
+            description: "단지 정보 원본 JSON"
+          - name: created_at
+            description: "생성 시각"
+          - name: updated_at
+            description: "수정 시각"
+
+      - name: complex_details
+        description: "아파트 단지 상세 정보 (평형 정보 포함)"
+        columns:
+          - name: complex_no
+            description: "단지 번호 (PK)"
+            tests:
+              - unique
+              - not_null
+          - name: payload
+            description: "단지 상세 정보 원본 JSON (pyeongs 포함)"
+          - name: created_at
+            description: "생성 시각"
+          - name: updated_at
+            description: "수정 시각"
+
+      - name: articles
+        description: "매물 정보"
+        columns:
+          - name: complex_no
+            description: "단지 번호 (복합키)"
+            tests:
+              - not_null
+          - name: article_no
+            description: "매물 번호 (복합키)"
+            tests:
+              - not_null
+          - name: payload
+            description: "매물 정보 원본 JSON"
+          - name: article_confirm_date
+            description: "매물 확인 날짜"
+          - name: expire_at
+            description: "매물 만료 날짜"
+          - name: created_at
+            description: "생성 시각"
+          - name: updated_at
+            description: "수정 시각"
+
+      - name: real_prices
+        description: "실거래가 정보"
+        columns:
+          - name: complex_no
+            description: "단지 번호"
+            tests:
+              - not_null
+          - name: area_no
+            description: "평형 번호"
+            tests:
+              - not_null
+          - name: floor
+            description: "층수"
+          - name: deal_price
+            description: "거래 가격"
+          - name: trade_date
+            description: "거래 날짜"
+            tests:
+              - not_null
+          - name: payload
+            description: "실거래가 정보 원본 JSON"
+          - name: created_at
+            description: "생성 시각"
+          - name: updated_at
+            description: "수정 시각"

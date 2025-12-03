@@ -9,34 +9,43 @@ networks:
 volumes:
   mongo-data:
   redis-data:
-  postgres-data:
+  rs_postgres_data:
+    external: true
 
 services:
   # ============================================
   # Infrastructure
   # ============================================
+
+  # PostgreSQL (PostGIS + pgvector) - API와 Pipeline 공용
+  # 스키마로 분리: public(API), staging(dbt), marts(dbt)
   postgres:
-    image: postgres:16-alpine
+    build:
+      context: ./docker/postgres
+      dockerfile: Dockerfile
     container_name: rs_postgres
     environment:
+      POSTGRES_DB: ${POSTGRES_DB:-realestate}
       POSTGRES_USER: ${POSTGRES_USER:-admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-abc123}
-      POSTGRES_DB: ${POSTGRES_DB:-realestate}
       TZ: Asia/Seoul
-    ports:
-      - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - rs_postgres_data:/var/lib/postgresql
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5434:5432"
     networks:
       - realestate_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin"]
+      test: ["CMD-SHELL", "pg_isready -U admin -d realestate"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   mongo:
-    image: mongo:7
+    build:
+      context: ./docker/mongo
+      dockerfile: Dockerfile
     container_name: rs_mongo
     ports:
       - "27017:27017"
@@ -49,7 +58,9 @@ services:
       - realestate_network
 
   redis:
-    image: redis:7-alpine
+    build:
+      context: ./docker/redis
+      dockerfile: Dockerfile
     container_name: rs_redis
     ports:
       - "6379:6379"

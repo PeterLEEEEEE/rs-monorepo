@@ -42,32 +42,6 @@ class AppContainer(containers.DeclarativeContainer):
         max_overflow=config.DB_MAX_OVERFLOW,
         pool_recycle=config.DB_POOL_RECYCLE,
     )
-    # # DB 엔진 생성 (설정 객체의 get_db_url 메소드 사용)
-    # db_engine = providers.Singleton(
-    #     create_async_engine,
-    #     url="postgresql+asyncpg://admin:abc123@postgres:5432/test",
-    #     # url=config.get_db_url(),
-    #     echo=config.DB_ECHO,
-    #     pool_recycle=config.DB_POOL_RECYCLE,
-    #     pool_pre_ping=True,
-    # )
-    
-    # # Session Factory 생성
-    # async_session_factory = providers.Factory(
-    #     async_sessionmaker,
-    #     autocommit=False,
-    #     autoflush=False,
-    #     bind=db_engine,
-    #     expire_on_commit=False,
-    # )
-    # session = providers.Factory(
-    #     async_session_factory
-    # )
-    # session = providers.Factory(
-    #     lambda factory: factory(),
-    #     async_session_factory,
-    # )
-    
 
     llm = providers.Singleton(
         AzureChatOpenAI,

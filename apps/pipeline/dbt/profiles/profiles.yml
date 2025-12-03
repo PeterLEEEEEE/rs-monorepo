@@ -1,0 +1,27 @@
+rs_dbt:
+  outputs:
+    # 로컬 개발용 (호스트 머신에서 직접 dbt 실행 시)
+    dev:
+      type: postgres
+      host: "{{ env_var('DBT_HOST', 'localhost') }}"
+      port: "{{ env_var('DBT_PORT', '5434') | int }}"
+      user: "{{ env_var('DBT_USER', 'admin') }}"
+      password: "{{ env_var('DBT_PASSWORD') }}"
+      dbname: "{{ env_var('DBT_DBNAME', 'realestate') }}"
+      schema: staging
+      threads: 4
+      keepalives_idle: 0
+
+    # Docker 컨테이너 내부에서 실행 시 (Airflow에서 사용)
+    docker:
+      type: postgres
+      host: "{{ env_var('DBT_HOST', 'rs_postgres') }}"
+      port: "{{ env_var('DBT_PORT', '5432') | int }}"
+      user: "{{ env_var('DBT_USER', 'admin') }}"
+      password: "{{ env_var('DBT_PASSWORD') }}"
+      dbname: "{{ env_var('DBT_DBNAME', 'realestate') }}"
+      schema: staging
+      threads: 4
+      keepalives_idle: 0
+
+  target: dev

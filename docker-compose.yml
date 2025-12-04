@@ -4,6 +4,7 @@
 
 networks:
   realestate_network:
+    name: realestate_network
     driver: bridge
 
 volumes:

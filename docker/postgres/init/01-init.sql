@@ -5,12 +5,6 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS vector;
 
 -- =============================================================================
--- LANGFUSE DATABASE (for LLM observability)
--- =============================================================================
-SELECT 'CREATE DATABASE langfuse'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'langfuse')\gexec
-
--- =============================================================================
 -- SCHEMA 생성
 -- =============================================================================
 CREATE SCHEMA IF NOT EXISTS raw;      -- Raw Layer: API 원본 데이터

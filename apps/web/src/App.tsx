@@ -5,6 +5,7 @@ import SignUpPage from "./pages/sign-up-page";
 import IndexPage from "./pages/index-page";
 import ChatRoom from "./pages/chatroom";
 import CounterPage from "./pages/counter";
+import TodoListPage from "./pages/todo-list-page";
 
 function AuthLayout() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route path="/sign-up" element={<SignUpPage />} />
       </Route>
       <Route path="/chatroom" element={<ChatRoom />} />
+      <Route path="/todos" element={<TodoListPage />} />
     </Routes>
   );
 }

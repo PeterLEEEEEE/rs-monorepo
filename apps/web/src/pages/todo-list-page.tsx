@@ -1,5 +1,6 @@
 import { fetchTodos } from "@/api/fetch-todos";
-import { useTodosData } from "@/hooks/queries/use-todos.data";
+import TodoItem from "@/components/todo/todo-item";
+import { useTodosData } from "@/hooks/queries/use-todos-data";
 
 export default function TodoListPage() {
   const { data: todos, isLoading, error } = useTodosData();
@@ -16,9 +17,7 @@ export default function TodoListPage() {
       <h1>Todo List</h1>
       <ul>
         {todos?.map((todo) => (
-          <li key={todo.id}>
-            {todo.content} {todo.isDone ? "(Completed)" : ""}
-          </li>
+          <TodoItem key={todo.id} id={todo.id} content={todo.content} />
         ))}
       </ul>
     </div>

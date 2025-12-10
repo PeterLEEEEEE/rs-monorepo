@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from typing_extensions import AsyncGenerator
 
 

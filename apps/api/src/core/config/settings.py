@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     JWT_SECRET: str = Field("secret", alias="JWT_SECRET")
     JWT_ALGORITHM: str = Field("HS256", alias="JWT_ALGORITHM")
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(60, alias="JWT_ACCESS_TOKEN_EXPIRE_MINUTES")
+    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = Field(7, alias="JWT_REFRESH_TOKEN_EXPIRE_DAYS")
     
     # HTTPX 설정
     CLIENT_TIME_OUT: int = Field(5, alias="CLIENT_TIME_OUT")
@@ -94,7 +95,7 @@ class Settings(BaseSettings):
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.POSTGRES_DB}"
     
     def get_mygration_url(self):
-        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@localhost:{self.DB_PORT}/{self.POSTGRES_DB}"
+        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@localhost:5434/{self.POSTGRES_DB}"
     
     def get_redis_url(self):
         """Redis URL 생성"""

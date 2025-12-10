@@ -8,6 +8,7 @@ from src.core.config.container import config_container
 from src.db.conn import SQLAlchemyConnection
 from src.domain.user.container import UserContainer
 from src.domain.chat.container import ChatContainer
+from src.domain.auth.container import AuthContainer
 from src.agents.container import AgentContainer
 
 
@@ -77,6 +78,12 @@ class AppContainer(containers.DeclarativeContainer):
     user_container = providers.Container(
         UserContainer,
         session_factory=db.provided.session,
+    )
+
+    auth_container = providers.Container(
+        AuthContainer,
+        session_factory=db.provided.session,
+        redis_client=redis_client,
     )
 
     # AgentContainer를 먼저 정의 (ChatContainer에서 orchestrator 사용)

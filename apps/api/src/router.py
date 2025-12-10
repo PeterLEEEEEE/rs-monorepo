@@ -3,6 +3,7 @@ from pydantic import BaseModel, ConfigDict
 from src.domain.home.views import home_router
 from src.domain.user.controller import user_router as user_v1_router # User 라우터 import
 from src.domain.chat.controller import chat_router
+from src.domain.auth.controller import auth_router
 from src.core.utils import snake2camel
 
 
@@ -33,4 +34,5 @@ router = APIRouter(
 
 router.include_router(home_router, tags=["Home"])
 router.include_router(user_v1_router)  # User 라우터 등록
-router.include_router(chat_router, tags=["Chat"])
+router.include_router(auth_router)  # Auth 라우터 등록
+router.include_router(chat_router)  # Chat 라우터 등록

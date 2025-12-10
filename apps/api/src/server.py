@@ -65,7 +65,7 @@ def create_app() -> FastAPI:
     )
     app_.include_router(a2a_router, prefix="/api")
 
-    app_.include_router(router, prefix="/api")
+    app_.include_router(router, prefix="/api/v1")
     app_.container = container
     return app_ 
 

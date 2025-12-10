@@ -8,16 +8,12 @@ class LoginRequest(BaseModel):
     """로그인 요청"""
     email: EmailStr
     password: str
-
-
-class RefreshTokenRequest(BaseModel):
-    """토큰 갱신 요청"""
-    refresh_token: str
+    device_id: str | None = None  # FingerprintJS에서 생성된 디바이스 ID
 
 
 class LogoutRequest(BaseModel):
-    """로그아웃 요청"""
-    refresh_token: str
+    """로그아웃 요청 (refresh_token은 httpOnly 쿠키에서 읽음)"""
+    pass
 
 
 # ============== Response Schemas ==============
@@ -33,6 +29,17 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
+# ============== Internal DTOs ==============
+
+class LoginResult(BaseModel):
+    """내부용 로그인 결과 (service → controller)"""
+    access_token: str
+    refresh_token: str  # 쿠키로 전달
+    token_type: str = "bearer"
+    expires_in: int
+    user: UserResponse
+
+
 class TokenResponse(BaseModel):
     """토큰 응답"""
     access_token: str
@@ -42,9 +49,8 @@ class TokenResponse(BaseModel):
 
 
 class LoginResponse(BaseModel):
-    """로그인 응답"""
+    """로그인 응답 (refresh_token은 httpOnly 쿠키로 전달)"""
     access_token: str
-    refresh_token: str
     token_type: str = "bearer"
     expires_in: int  # seconds
     user: UserResponse

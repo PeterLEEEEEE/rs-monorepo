@@ -57,3 +57,14 @@ class RefreshTokenRepository:
             result = await session.execute(query)
             await session.commit()
             return result.rowcount
+
+    async def delete_by_user_and_device(self, user_id: int, device_id: str) -> int:
+        """같은 사용자 + 같은 디바이스의 기존 토큰 삭제"""
+        async with self.session_factory() as session:
+            query = delete(RefreshToken).where(
+                RefreshToken.user_id == user_id,
+                RefreshToken.device_info == device_id
+            )
+            result = await session.execute(query)
+            await session.commit()
+            return result.rowcount

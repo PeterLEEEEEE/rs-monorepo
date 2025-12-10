@@ -63,11 +63,12 @@ def mock_user():
 class TestAuthServiceLogin:
     """로그인 테스트"""
 
-    async def test_login_success(self, auth_service, mock_user_repository, mock_user):
+    async def test_login_success(self, auth_service, mock_user_repository, mock_refresh_token_repository, mock_user):
         """로그인 성공"""
         mock_user_repository.get_by_email.return_value = mock_user
+        mock_refresh_token_repository.delete_by_user_and_device.return_value = 0
 
-        result = await auth_service.login("test@test.com", "password123")
+        result = await auth_service.login("test@test.com", "password123", device_id="test-device", ip_address="127.0.0.1")
 
         assert result is not None
         assert result.access_token is not None
@@ -76,6 +77,7 @@ class TestAuthServiceLogin:
         assert result.user.id == mock_user.id
         assert result.user.email == mock_user.email
         mock_user_repository.get_by_email.assert_called_once_with("test@test.com")
+        mock_refresh_token_repository.create.assert_called_once()
 
     async def test_login_user_not_found(self, auth_service, mock_user_repository):
         """존재하지 않는 사용자 로그인 실패"""
@@ -101,6 +103,16 @@ class TestAuthServiceLogin:
         result = await auth_service.login("test@test.com", "password123")
 
         assert result is None
+
+    async def test_login_same_device_deletes_old_token(self, auth_service, mock_user_repository, mock_refresh_token_repository, mock_user):
+        """같은 device_id로 로그인 시 기존 토큰 삭제"""
+        mock_user_repository.get_by_email.return_value = mock_user
+        mock_refresh_token_repository.delete_by_user_and_device.return_value = 1
+
+        result = await auth_service.login("test@test.com", "password123", device_id="same-device")
+
+        assert result is not None
+        mock_refresh_token_repository.delete_by_user_and_device.assert_called_once_with(mock_user.id, "same-device")
 
 
 class MockRefreshToken:

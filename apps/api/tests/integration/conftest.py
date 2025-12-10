@@ -90,15 +90,16 @@ async def authenticated_client(client, test_container, db_session):
 
     # 로그인해서 토큰 발급
     response = await client.post(
-        "/api/auth/login",
-        json={"email": user.email, "password": "password123"}
+        "/api/v1/auth/login",
+        json={"email": user.email, "password": "password123", "device_id": "test-device"}
     )
 
     refresh_token = None
     if response.status_code == 200:
         data = response.json()
         token = data["access_token"]
-        refresh_token = data["refresh_token"]
+        # refresh_token은 쿠키에서 가져옴
+        refresh_token = response.cookies.get("refresh_token")
         client.headers["Authorization"] = f"Bearer {token}"
 
     # client, user, refresh_token 반환

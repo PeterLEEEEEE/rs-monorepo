@@ -19,18 +19,6 @@ class User(Base, Mixin):
         server_default=expression.true()  # default=True
     )
 
-class UserSession(Base, Mixin):
-    __tablename__ = "user_sessions"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(Integer, nullable=False)  # User ID
-    session_token: Mapped[str] = mapped_column(String(256), nullable=False, unique=True)
-    is_active: Mapped[bool] = mapped_column(
-        Boolean, 
-        nullable=False, 
-        server_default=expression.true()  # default=True
-    )
-    
 class LoginHistory(Base, Mixin):
     __tablename__ = "login_history"
 

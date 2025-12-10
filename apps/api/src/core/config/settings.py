@@ -49,6 +49,10 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = Field("HS256", alias="JWT_ALGORITHM")
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(60, alias="JWT_ACCESS_TOKEN_EXPIRE_MINUTES")
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = Field(7, alias="JWT_REFRESH_TOKEN_EXPIRE_DAYS")
+
+    # Cookie 설정
+    COOKIE_SECURE: bool = Field(False, alias="COOKIE_SECURE")  # 운영: True (HTTPS)
+    COOKIE_SAMESITE: str = Field("lax", alias="COOKIE_SAMESITE")  # 운영: strict
     
     # HTTPX 설정
     CLIENT_TIME_OUT: int = Field(5, alias="CLIENT_TIME_OUT")

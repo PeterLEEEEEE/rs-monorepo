@@ -9,7 +9,7 @@ from src.domain.user.repository import UserRepository
 from src.domain.user.service import check_password
 from src.domain.user.models import User
 
-from .dtos import LoginResponse, UserResponse, RefreshResponse
+from .dtos import LoginResult, UserResponse, RefreshResponse
 from .models import RefreshToken
 from .repository import RefreshTokenRepository
 
@@ -31,7 +31,7 @@ class AuthService:
         self.refresh_token_repository = refresh_token_repository
         self.redis_client = redis_client
 
-    async def login(self, email: str, password: str) -> Optional[LoginResponse]:
+    async def login(self, email: str, password: str, device_id: str | None = None, ip_address: str | None = None) -> Optional[LoginResult]:
         """
         로그인 처리
 
@@ -58,7 +58,13 @@ class AuthService:
             logger.warning(f"Login failed: inactive account - {email}")
             return None
 
-        # 4. 토큰 생성
+        # 4. 같은 디바이스의 기존 토큰 삭제 (디바이스당 하나의 세션만 유지)
+        if device_id:
+            deleted = await self.refresh_token_repository.delete_by_user_and_device(user.id, device_id)
+            if deleted > 0:
+                logger.info(f"Deleted {deleted} existing token(s) for device: {device_id}")
+
+        # 5. 토큰 생성
         access_token = jwt_handler.create_access_token(
             user_id=user.id,
             email=user.email,
@@ -66,7 +72,7 @@ class AuthService:
         )
         refresh_token = jwt_handler.create_refresh_token(user_id=user.id)
 
-        # 5. Refresh Token DB 저장
+        # 6. Refresh Token DB 저장
         now = datetime.utcnow()
         expires_at = now + timedelta(days=config.JWT_REFRESH_TOKEN_EXPIRE_DAYS)
         refresh_token_entity = RefreshToken(
@@ -74,12 +80,14 @@ class AuthService:
             token=refresh_token,
             expires_at=expires_at,
             created_at=now,
+            device_info=device_id,
+            ip_address=ip_address,
         )
         await self.refresh_token_repository.create(refresh_token_entity)
 
         logger.info(f"Login successful: {email}")
 
-        return LoginResponse(
+        return LoginResult(
             access_token=access_token,
             refresh_token=refresh_token,
             token_type="bearer",

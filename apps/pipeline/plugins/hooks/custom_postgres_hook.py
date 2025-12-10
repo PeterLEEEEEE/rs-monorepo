@@ -94,6 +94,10 @@ class CustomPostgresHook(BaseHook):
         if not records:
             return
 
+        # 중복 제거 (동일 complex_no가 여러 번 있을 경우 마지막 것만 유지)
+        unique_records = {r[0]: r for r in records}
+        records = list(unique_records.values())
+
         insert_sql = """
             INSERT INTO raw.complexes (
                 complex_no,
@@ -145,6 +149,10 @@ class CustomPostgresHook(BaseHook):
 
         if not records:
             return
+
+        # 중복 제거 (동일 (complex_no, article_no)가 여러 번 있을 경우 마지막 것만 유지)
+        unique_records = {(r[0], r[1]): r for r in records}
+        records = list(unique_records.values())
 
         insert_sql = """
             INSERT INTO raw.articles (
@@ -204,6 +212,10 @@ class CustomPostgresHook(BaseHook):
 
         if not records:
             return
+
+        # 중복 제거 (동일 complex_no가 여러 번 있을 경우 마지막 것만 유지)
+        unique_records = {r[0]: r for r in records}
+        records = list(unique_records.values())
 
         insert_sql = """
             INSERT INTO raw.complex_details (

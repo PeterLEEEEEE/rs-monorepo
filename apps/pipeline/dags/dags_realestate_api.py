@@ -11,9 +11,9 @@ from operators.api_to_postgres_ops import (
 
 # 수집 대상 지역 (None이면 전체)
 TARGET_REGIONS = [
-    # "서울시 노원구",
-    # "서울시 강서구",
-    # "서울시 강북구",
+    # "서울시 성북구",
+    # "서울시 종로구",
+    # "서울시 중구",
 ]
 IS_BATCH = False # 배치 모드 or 증분 모드
 

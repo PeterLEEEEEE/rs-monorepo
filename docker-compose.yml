@@ -82,7 +82,7 @@ services:
     container_name: rs_api
     build:
       context: ./apps/api
-      dockerfile: docker/api/Dockerfile
+      dockerfile: Dockerfile
     ports:
       - "8000:80"
       - "5678:5678"  # debugpy

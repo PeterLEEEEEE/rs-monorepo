@@ -10,13 +10,13 @@ export default defineConfig({
     watch: {
       ignored: ["**/temp/**"],
     },
-    // port: 5173,
-    // proxy: {
-    //   "/api": {
-    //     target: "http://localhost:8000",
-    //     changeOrigin: true,
-    //   },
-    // },
+    port: 5173,
+    proxy: {
+      "/api": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
+    },
   },
   resolve: {
     alias: {

@@ -3,7 +3,7 @@ from datetime import date, timedelta
 from langchain_core.tools import tool
 from sqlalchemy import text
 
-from src.db.session import session
+from src.db.session import get_session
 
 
 class MarketTools:
@@ -34,6 +34,7 @@ class MarketTools:
             Returns:
                 실거래 내역 목록
             """
+            session = get_session()
             conditions = ["complex_id = :complex_id"]
             params = {"complex_id": complex_id}
 
@@ -93,6 +94,7 @@ class MarketTools:
             Returns:
                 가격 통계 정보
             """
+            session = get_session()
             conditions = [
                 "complex_id = :complex_id",
                 "trade_date >= :start_date"
@@ -141,6 +143,7 @@ class MarketTools:
             Returns:
                 월별 시세 추이
             """
+            session = get_session()
             conditions = [
                 "complex_id = :complex_id",
                 "trade_date >= :start_date"

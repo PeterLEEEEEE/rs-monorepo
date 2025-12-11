@@ -2,7 +2,7 @@
 import logging
 from functools import wraps
 
-from .session import session
+from .session import get_session
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,7 @@ def transactional(func):
     """
     @wraps(func)
     async def wrapper(*args, **kwargs):
+        session = get_session()
         try:
             result = await func(*args, **kwargs)
             await session.commit()

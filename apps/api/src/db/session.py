@@ -29,7 +29,17 @@ def reset_session_context(context: Token) -> None:
 
 
 # 글로벌 scoped session - init_session()에서 초기화됨
-session: Optional[async_scoped_session[AsyncSession]] = None
+_session: Optional[async_scoped_session[AsyncSession]] = None
+
+
+def get_session() -> async_scoped_session[AsyncSession]:
+    """
+    글로벌 scoped session 반환.
+    호출 시점에 session을 가져오므로 import 순서 문제 없음.
+    """
+    if _session is None:
+        raise RuntimeError("Session not initialized. Call init_session() first.")
+    return _session
 
 
 def init_session(engine: AsyncEngine) -> async_scoped_session[AsyncSession]:
@@ -37,7 +47,7 @@ def init_session(engine: AsyncEngine) -> async_scoped_session[AsyncSession]:
     글로벌 scoped session 초기화.
     앱 시작 시 호출해야 함.
     """
-    global session
+    global _session
 
     _session_factory = async_sessionmaker(
         engine,
@@ -46,9 +56,9 @@ def init_session(engine: AsyncEngine) -> async_scoped_session[AsyncSession]:
         autoflush=False,
     )
 
-    session = async_scoped_session(
+    _session = async_scoped_session(
         session_factory=_session_factory,
         scopefunc=get_session_context,
     )
 
-    return session
+    return _session

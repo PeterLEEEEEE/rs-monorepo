@@ -119,11 +119,11 @@ class MockRefreshToken:
     """테스트용 RefreshToken Mock 객체"""
 
     def __init__(self, user_id: int, token: str, expires_at=None):
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
         self.user_id = user_id
         self.token = token
-        self.expires_at = expires_at or (datetime.utcnow() + timedelta(days=7))
-        self.created_at = datetime.utcnow()
+        self.expires_at = expires_at or (datetime.now(timezone.utc) + timedelta(days=7))
+        self.created_at = datetime.now(timezone.utc)
 
 
 class TestAuthServiceRefreshToken:
@@ -196,14 +196,14 @@ class TestAuthServiceRefreshToken:
         self, auth_service, mock_refresh_token_repository
     ):
         """DB에서 만료된 토큰으로 갱신 실패"""
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
         from src.core.security.jwt import jwt_handler
 
         refresh_token = jwt_handler.create_refresh_token(user_id=1)
         expired_stored_token = MockRefreshToken(
             user_id=1,
             token=refresh_token,
-            expires_at=datetime.utcnow() - timedelta(days=1),  # 이미 만료
+            expires_at=datetime.now(timezone.utc) - timedelta(days=1),  # 이미 만료
         )
 
         mock_refresh_token_repository.get_by_token.return_value = expired_stored_token

@@ -125,3 +125,52 @@ Required variables:
 - `GET /api/chat/room/{room_id}` - Get chat history
 - A2A protocol: `/api/a2a/*` routes for agent discovery and messaging
 - MCP tools: mounted at `/mcp/v1`
+
+## Real Price API
+
+실거래가 조회 API - 단지별 평형별 실거래가 추이 제공
+
+### Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/real-price/{complex_id}/pyeongs` | 단지의 평형 목록 조회 |
+| GET | `/api/v1/real-price/{complex_id}/trend` | 평형별 월별 실거래가 추이 |
+
+### Query Parameters (trend)
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| months | int | 24 | 조회 기간 (1~120개월) |
+| pyeong_id | string | null | 특정 평형 필터 |
+
+### Data Source (staging 스키마)
+
+| Table | Description | Source |
+|-------|-------------|--------|
+| `stg_complexes` | 단지 기본 정보 (단지명, 위치, 세대수 등) | raw.complex_details JSONB 파싱 |
+| `stg_pyeongs` | 평형 정보 (평형명, 전용면적 등) | raw.complex_details의 pyeongs 배열 |
+| `stg_real_prices` | 실거래가 (거래일, 가격, 층수 등) | raw.real_prices JSONB 파싱 |
+
+### Response Example
+
+```json
+// GET /api/v1/real-price/184857/trend?months=12
+{
+  "complexId": "184857",
+  "complexName": "잠실르엘",
+  "pyeongs": [
+    {
+      "pyeongId": "6",
+      "pyeongName": "82A",
+      "pyeongName2": "25A",
+      "exclusiveAreaSqm": 59.87,
+      "exclusiveAreaPyeong": 18.11,
+      "trend": [
+        { "month": "2025-08", "avgPrice": 290002, "minPrice": 290002, "maxPrice": 290002, "tradeCount": 1 },
+        { "month": "2025-11", "avgPrice": 330000, "minPrice": 330000, "maxPrice": 330000, "tradeCount": 1 }
+      ]
+    }
+  ]
+}
+```

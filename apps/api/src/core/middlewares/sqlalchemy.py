@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-from src.db.session import session, set_session_context, reset_session_context
+from src.db.session import get_session, set_session_context, reset_session_context
 
 
 class SQLAlchemyMiddleware:
@@ -29,8 +29,6 @@ class SQLAlchemyMiddleware:
 
         try:
             await self.app(scope, receive, send)
-        except Exception as e:
-            raise e
         finally:
-            await session.remove()
+            await get_session().remove()
             reset_session_context(context)

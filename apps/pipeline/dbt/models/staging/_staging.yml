@@ -43,3 +43,139 @@ models:
 
       - name: exclusive_area_pyeong
         description: "전용면적 (평)"
+
+  - name: stg_complexes
+    description: "단지 정보 Silver Layer - 단지 기본 정보 파싱"
+    columns:
+      - name: complex_id
+        description: "단지 ID (PK)"
+        tests:
+          - unique
+          - not_null
+
+      - name: complex_name
+        description: "단지명"
+        tests:
+          - not_null
+
+      - name: complex_type
+        description: "단지 유형 코드 (A01=아파트)"
+
+      - name: complex_type_name
+        description: "단지 유형명 (아파트, 오피스텔 등)"
+
+      - name: total_dong_count
+        description: "총 동 수"
+
+      - name: total_household_count
+        description: "총 세대 수"
+
+      - name: use_approve_ymd
+        description: "사용 승인일 (YYYYMMDD)"
+
+      - name: latitude
+        description: "위도"
+
+      - name: longitude
+        description: "경도"
+
+      - name: min_price
+        description: "최소 매매가 (만원)"
+
+      - name: max_price
+        description: "최대 매매가 (만원)"
+
+      - name: min_lease_price
+        description: "최소 전세가 (만원)"
+
+      - name: max_lease_price
+        description: "최대 전세가 (만원)"
+
+  - name: stg_pyeongs
+    description: "평형 정보 Silver Layer - 단지별 평형 정보"
+    columns:
+      - name: complex_id
+        description: "단지 ID"
+        tests:
+          - not_null
+
+      - name: pyeong_id
+        description: "평형 ID"
+        tests:
+          - not_null
+
+      - name: pyeong_name
+        description: "평형명 (㎡ 기준: 81C, 102A)"
+
+      - name: pyeong_name2
+        description: "평형명 (평 기준: 24C, 31A)"
+
+      - name: supply_area_sqm
+        description: "공급면적 (㎡)"
+
+      - name: exclusive_area_sqm
+        description: "전용면적 (㎡)"
+
+      - name: exclusive_area_pyeong
+        description: "전용면적 (평)"
+
+      - name: grand_plan_url
+        description: "평면도 이미지 URL"
+
+  - name: stg_articles
+    description: "매물 정보 Silver Layer - 최근 1개월 이내 만료 매물만 포함"
+    columns:
+      - name: complex_id
+        description: "단지 ID"
+        tests:
+          - not_null
+
+      - name: article_id
+        description: "매물 ID"
+        tests:
+          - not_null
+
+      - name: article_name
+        description: "매물명 (단지명)"
+
+      - name: building_name
+        description: "동 이름 (예: 106동)"
+
+      - name: area_name
+        description: "평형명 (예: 115A)"
+
+      - name: trade_type_code
+        description: "거래 유형 코드 (A1=매매, B1=전세, B2=월세)"
+
+      - name: trade_type_name
+        description: "거래 유형명"
+
+      - name: price_text
+        description: "가격 텍스트 (예: 34억, 12억 5000)"
+
+      - name: price_change_state
+        description: "가격 변동 상태 (SAME, UP, DOWN)"
+
+      - name: supply_area_sqm
+        description: "공급면적 (㎡)"
+
+      - name: exclusive_area_sqm
+        description: "전용면적 (㎡)"
+
+      - name: floor_info
+        description: "층 정보 (예: 4/14)"
+
+      - name: direction
+        description: "향 (남향, 남동향 등)"
+
+      - name: realtor_name
+        description: "중개사 이름"
+
+      - name: feature_description
+        description: "매물 특징 설명"
+
+      - name: confirm_date
+        description: "매물 확인일"
+
+      - name: expire_date
+        description: "매물 만료일"

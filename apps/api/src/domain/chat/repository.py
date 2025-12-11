@@ -1,28 +1,28 @@
 from datetime import datetime, timezone
 from sqlalchemy import select, desc, func, update
 
-from src.db.session import session
+from src.db.base_repository import BaseRepository
 from .models import ChatRoom, ChatMessage
 
 
-class ChatRepository:
-    """Chat Repository - 글로벌 scoped session 사용"""
+class ChatRepository(BaseRepository):
+    """Chat Repository"""
 
     async def get_next_turn_id(self, room_id: str) -> int:
         """채팅방의 다음 turn_id 반환"""
         query = select(func.max(ChatMessage.turn_id)).where(
             ChatMessage.chat_room_id == room_id
         )
-        result = await session.execute(query)
+        result = await self.session.execute(query)
         max_turn = result.scalar()
         return (max_turn or 0) + 1
 
     async def create_chatroom(self, user_id: str, title: str = None) -> ChatRoom:
         """채팅방 생성 후 ChatRoom 객체 반환"""
         chat_room = ChatRoom(user_id=user_id, title=title)
-        session.add(chat_room)
-        await session.flush()
-        await session.refresh(chat_room)
+        self.session.add(chat_room)
+        await self.session.flush()
+        await self.session.refresh(chat_room)
         return chat_room
 
     async def get_chatroom(self, room_id: str) -> ChatRoom | None:
@@ -31,7 +31,7 @@ class ChatRepository:
             ChatRoom.id == room_id,
             ChatRoom.is_deleted.is_(False)
         )
-        result = await session.execute(query)
+        result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def get_chatrooms_paginated(
@@ -43,7 +43,7 @@ class ChatRepository:
             ChatRoom.user_id == user_id,
             ChatRoom.is_deleted.is_(False)
         )
-        total_result = await session.execute(count_query)
+        total_result = await self.session.execute(count_query)
         total = total_result.scalar() or 0
 
         # 페이지네이션된 목록 조회
@@ -52,7 +52,7 @@ class ChatRepository:
             ChatRoom.user_id == user_id,
             ChatRoom.is_deleted.is_(False)
         ).order_by(desc(ChatRoom.updated_at)).offset(offset).limit(limit)
-        result = await session.execute(query)
+        result = await self.session.execute(query)
         rooms = list(result.scalars().all())
 
         return rooms, total
@@ -63,44 +63,44 @@ class ChatRepository:
             ChatRoom.id == room_id,
             ChatRoom.is_deleted.is_(False)
         )
-        result = await session.execute(query)
+        result = await self.session.execute(query)
         chat_room = result.scalar_one_or_none()
         if chat_room:
             chat_room.title = title
             chat_room.updated_at = datetime.now(timezone.utc)
-            await session.flush()
-            await session.refresh(chat_room)
+            await self.session.flush()
+            await self.session.refresh(chat_room)
         return chat_room
 
     async def delete_chatroom(self, room_id: str) -> bool:
         """채팅방 soft delete"""
         query = select(ChatRoom).where(ChatRoom.id == room_id)
-        result = await session.execute(query)
+        result = await self.session.execute(query)
         chat_room = result.scalar_one_or_none()
         if chat_room:
             chat_room.is_deleted = True
             chat_room.deleted_at = datetime.now(timezone.utc)
-            await session.flush()
+            await self.session.flush()
             return True
         return False
 
     async def hard_delete_chatroom(self, room_id: str) -> bool:
         """채팅방 물리 삭제 (메시지가 없는 경우용)"""
         query = select(ChatRoom).where(ChatRoom.id == room_id)
-        result = await session.execute(query)
+        result = await self.session.execute(query)
         chat_room = result.scalar_one_or_none()
         if chat_room:
-            await session.delete(chat_room)
-            await session.flush()
+            await self.session.delete(chat_room)
+            await self.session.flush()
             return True
         return False
 
     async def add_message(self, room_id: str, turn_id: int, role: str, content: str) -> ChatMessage:
         """메시지 저장"""
         message = ChatMessage(chat_room_id=room_id, turn_id=turn_id, role=role, content=content)
-        session.add(message)
-        await session.flush()
-        await session.refresh(message)
+        self.session.add(message)
+        await self.session.flush()
+        await self.session.refresh(message)
         return message
 
     async def get_messages_paginated(
@@ -111,7 +111,7 @@ class ChatRepository:
         count_query = select(func.count(ChatMessage.id)).where(
             ChatMessage.chat_room_id == room_id
         )
-        total_result = await session.execute(count_query)
+        total_result = await self.session.execute(count_query)
         total = total_result.scalar() or 0
 
         # 페이지네이션 (최신 메시지부터)
@@ -119,7 +119,7 @@ class ChatRepository:
         query = select(ChatMessage).where(
             ChatMessage.chat_room_id == room_id
         ).order_by(desc(ChatMessage.created_at)).offset(offset).limit(limit)
-        result = await session.execute(query)
+        result = await self.session.execute(query)
         # 시간순 정렬로 반환
         messages = list(reversed(result.scalars().all()))
 
@@ -130,7 +130,7 @@ class ChatRepository:
         query = select(ChatMessage).where(
             ChatMessage.chat_room_id == room_id
         ).order_by(desc(ChatMessage.created_at)).limit(limit)
-        result = await session.execute(query)
+        result = await self.session.execute(query)
         return list(reversed(result.scalars().all()))
 
     async def get_message_count(self, room_id: str) -> int:
@@ -138,7 +138,7 @@ class ChatRepository:
         query = select(func.count(ChatMessage.id)).where(
             ChatMessage.chat_room_id == room_id
         )
-        result = await session.execute(query)
+        result = await self.session.execute(query)
         return result.scalar() or 0
 
     async def get_last_message(self, room_id: str) -> ChatMessage | None:
@@ -146,7 +146,7 @@ class ChatRepository:
         query = select(ChatMessage).where(
             ChatMessage.chat_room_id == room_id
         ).order_by(desc(ChatMessage.created_at)).limit(1)
-        result = await session.execute(query)
+        result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def update_room_timestamp(self, room_id: str) -> None:
@@ -154,5 +154,5 @@ class ChatRepository:
         stmt = update(ChatRoom).where(
             ChatRoom.id == room_id
         ).values(updated_at=datetime.now(timezone.utc))
-        await session.execute(stmt)
-        await session.flush()
+        await self.session.execute(stmt)
+        await self.session.flush()

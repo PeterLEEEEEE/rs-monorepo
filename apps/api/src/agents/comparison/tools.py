@@ -3,7 +3,7 @@ from datetime import date, timedelta
 from langchain_core.tools import tool
 from sqlalchemy import text
 
-from src.db.session import session
+from src.db.session import get_session
 
 
 class ComparisonTools:
@@ -25,6 +25,7 @@ class ComparisonTools:
             if not complex_ids or len(complex_ids) < 2:
                 return {"error": "비교를 위해 최소 2개 이상의 단지 ID가 필요합니다."}
 
+            session = get_session()
             placeholders = ", ".join([f":id_{i}" for i in range(len(complex_ids))])
             params = {f"id_{i}": cid for i, cid in enumerate(complex_ids)}
 
@@ -77,6 +78,7 @@ class ComparisonTools:
             if not complex_ids or len(complex_ids) < 2:
                 return {"error": "비교를 위해 최소 2개 이상의 단지 ID가 필요합니다."}
 
+            session = get_session()
             placeholders = ", ".join([f":id_{i}" for i in range(len(complex_ids))])
             params = {f"id_{i}": cid for i, cid in enumerate(complex_ids)}
             params["start_date"] = date.today() - timedelta(days=months * 30)

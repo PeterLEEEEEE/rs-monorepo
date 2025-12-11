@@ -2,7 +2,7 @@ from typing import Optional
 from langchain_core.tools import tool
 from sqlalchemy import text
 
-from src.db.session import session
+from src.db.session import get_session
 
 
 class PropertyTools:
@@ -37,6 +37,7 @@ class PropertyTools:
             Returns:
                 매물 목록
             """
+            session = get_session()
             conditions = ["expire_at > NOW()"]
             params = {}
 
@@ -99,6 +100,7 @@ class PropertyTools:
             Returns:
                 매물 상세 정보
             """
+            session = get_session()
             query = text("""
                 SELECT
                     complex_no,
@@ -128,6 +130,7 @@ class PropertyTools:
             Returns:
                 단지 상세 정보
             """
+            session = get_session()
             query = text("""
                 SELECT
                     complex_no,

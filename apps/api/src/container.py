@@ -10,6 +10,7 @@ from src.db.session import init_session
 from src.domain.user.container import UserContainer
 from src.domain.chat.container import ChatContainer
 from src.domain.auth.container import AuthContainer
+from src.domain.real_price.container import RealPriceContainer
 from src.agents.container import AgentContainer
 
 
@@ -101,7 +102,9 @@ class AppContainer(containers.DeclarativeContainer):
         # mongo_db=mongo_proxy,
         orchestrator=agent_container.orchestrator,  # Singleton orchestrator 주입
     )
-    
+
+    real_price_container = providers.Container(RealPriceContainer)
+
     # # HomeContainer 구조 준비 (구현 시 주석 제거)
     # home_container = providers.Container(
     #     # HomeContainer,

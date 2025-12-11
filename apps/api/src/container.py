@@ -6,6 +6,7 @@ from langchain_openai import AzureChatOpenAI
 
 from src.core.config.container import config_container
 from src.db.conn import SQLAlchemyConnection
+from src.db.session import init_session
 from src.domain.user.container import UserContainer
 from src.domain.chat.container import ChatContainer
 from src.domain.auth.container import AuthContainer
@@ -23,6 +24,13 @@ def get_httpx_client(client_timeout, limit_per_host):
     return httpx.AsyncClient(timeout=client_timeout, limits=limits)
 
 
+def create_db_connection(db_url: str, **kwargs) -> SQLAlchemyConnection:
+    """DB 연결 생성 및 글로벌 session 초기화"""
+    conn = SQLAlchemyConnection(db_url, **kwargs)
+    init_session(conn.async_engine)
+    return conn
+
+
 class AppContainer(containers.DeclarativeContainer):
     config = config_container.config
 
@@ -37,7 +45,7 @@ class AppContainer(containers.DeclarativeContainer):
         limit_per_host=config.SIZE_POOL_HTTPX,
     )
     db = providers.Singleton(
-        SQLAlchemyConnection, 
+        create_db_connection,
         db_url=config.POSTGRES_DB_URL,
         pool_size=config.DB_POOL_SIZE,
         max_overflow=config.DB_MAX_OVERFLOW,
@@ -75,14 +83,10 @@ class AppContainer(containers.DeclarativeContainer):
         decode_responses=True
     )
     
-    user_container = providers.Container(
-        UserContainer,
-        session_factory=db.provided.session,
-    )
+    user_container = providers.Container(UserContainer)
 
     auth_container = providers.Container(
         AuthContainer,
-        session_factory=db.provided.session,
         redis_client=redis_client,
     )
 
@@ -90,12 +94,10 @@ class AppContainer(containers.DeclarativeContainer):
     agent_container = providers.Container(
         AgentContainer,
         llm=llm,
-        session_factory=db.provided.session,
     )
 
     chat_container = providers.Container(
         ChatContainer,
-        session_factory=db.provided.session,
         # mongo_db=mongo_proxy,
         orchestrator=agent_container.orchestrator,  # Singleton orchestrator 주입
     )

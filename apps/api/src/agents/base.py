@@ -122,6 +122,31 @@ class BaseAgent(ABC):
             context_id: Conversation/thread context ID
             user_id: Optional user identifier for tracing
         """
+        async for chunk in self.stream_with_history(
+            messages=[("user", query)],
+            context_id=context_id,
+            user_id=user_id,
+        ):
+            yield chunk
+
+    async def stream_with_history(
+        self,
+        messages: list[tuple[str, str]],
+        context_id: str,
+        user_id: Optional[str] = None,
+    ) -> AsyncIterator[str]:
+        """Stream responses from the agent with message history.
+
+        토큰 단위로 AI 응답을 스트리밍합니다.
+
+        Args:
+            messages: List of (role, content) tuples
+            context_id: Conversation/thread context ID
+            user_id: Optional user identifier for tracing
+
+        Yields:
+            str: 토큰 단위 텍스트 청크
+        """
         graph = self.get_graph()
 
         config = {"configurable": {"thread_id": context_id}}
@@ -131,12 +156,16 @@ class BaseAgent(ABC):
         if callback:
             config["callbacks"] = [callback]
 
-        async for chunk in graph.astream(
-            {"messages": [("user", query)]},
+        async for event in graph.astream_events(
+            {"messages": messages},
             config=config,
-            stream_mode="updates"
+            version="v2",
         ):
-            yield chunk
+            # LLM 토큰 스트리밍 이벤트만 처리
+            if event["event"] == "on_chat_model_stream":
+                chunk = event["data"]["chunk"]
+                if hasattr(chunk, "content") and chunk.content:
+                    yield chunk.content
 
     def get_agent_card(self) -> AgentCard:
         """Return A2A agent card for discovery."""

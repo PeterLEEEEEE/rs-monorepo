@@ -14,26 +14,11 @@ class AgentContainer(containers.DeclarativeContainer):
 
     # Dependencies from parent container
     llm = providers.Dependency()
-    session_factory = providers.Dependency()
 
-    # Sub-agents as singletons
-    property_agent = providers.Singleton(
-        PropertyAgent,
-        llm=llm,
-        session_factory=session_factory,
-    )
-
-    market_agent = providers.Singleton(
-        MarketAgent,
-        llm=llm,
-        session_factory=session_factory,
-    )
-
-    comparison_agent = providers.Singleton(
-        ComparisonAgent,
-        llm=llm,
-        session_factory=session_factory,
-    )
+    # Sub-agents as singletons (글로벌 session 사용, 주입 불필요)
+    property_agent = providers.Singleton(PropertyAgent, llm=llm)
+    market_agent = providers.Singleton(MarketAgent, llm=llm)
+    comparison_agent = providers.Singleton(ComparisonAgent, llm=llm)
 
     # Sub-agents dict for orchestrator
     sub_agents = providers.Dict({
@@ -46,6 +31,5 @@ class AgentContainer(containers.DeclarativeContainer):
     orchestrator = providers.Singleton(
         OrchestratorAgent,
         llm=llm,
-        session_factory=session_factory,
         sub_agents=sub_agents,
     )

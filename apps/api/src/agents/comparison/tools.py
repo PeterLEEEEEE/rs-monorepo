@@ -3,15 +3,14 @@ from datetime import date, timedelta
 from langchain_core.tools import tool
 from sqlalchemy import text
 
+from src.db.session import session
+
 
 class ComparisonTools:
     """Comparison Agent tools for comparing complexes."""
 
-    def __init__(self, session_factory):
-        self.session_factory = session_factory
-
     def get_tools(self) -> list:
-        """Return list of tools with session factory bound."""
+        """Return list of tools."""
 
         @tool
         async def compare_complexes(complex_ids: list[str]) -> list[dict]:
@@ -53,10 +52,9 @@ class ComparisonTools:
                 WHERE complex_no IN ({placeholders})
             """)
 
-            async with self.session_factory() as session:
-                result = await session.execute(query, params)
-                rows = result.fetchall()
-                return [dict(row._mapping) for row in rows]
+            result = await session.execute(query, params)
+            rows = result.fetchall()
+            return [dict(row._mapping) for row in rows]
 
         @tool
         async def compare_prices(
@@ -113,9 +111,8 @@ class ComparisonTools:
                 ORDER BY avg_price DESC
             """)
 
-            async with self.session_factory() as session:
-                result = await session.execute(query, params)
-                rows = result.fetchall()
-                return [dict(row._mapping) for row in rows]
+            result = await session.execute(query, params)
+            rows = result.fetchall()
+            return [dict(row._mapping) for row in rows]
 
         return [compare_complexes, compare_prices]

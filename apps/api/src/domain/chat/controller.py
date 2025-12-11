@@ -1,8 +1,10 @@
+import json
 from datetime import datetime
 from logger import logger
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from dependency_injector.wiring import inject, Provide
 from pydantic import BaseModel
+from sse_starlette.sse import EventSourceResponse
 
 from src.core.security.dependencies import get_current_user, CurrentUser
 from .service import ChatService
@@ -249,3 +251,45 @@ async def send_message(
 
     result = await chat_service.send_message(body.message, chat_id, user_id)
     return result
+
+
+@chat_router.post("/{chat_id}/message/stream")
+@inject
+async def stream_message(
+    chat_id: str,
+    body: SendMessageRequest,
+    current_user: CurrentUser = Depends(get_current_user),
+    chat_service: ChatService = Depends(Provide["chat_container.chat_service"]),
+):
+    """
+    메시지 전송 (SSE 스트리밍)
+
+    SSE 이벤트 타입:
+    - user_message: 저장된 사용자 메시지 정보
+    - token: AI 응답 토큰 (실시간 스트리밍)
+    - assistant_message: 저장된 AI 메시지 정보 (완료 시)
+    - error: 에러 발생 시
+    """
+    user_id = str(current_user.id)
+
+    # 채팅방 존재 및 소유자 검증
+    room = await chat_service.get_chatroom(chat_id)
+    if not room:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="채팅방을 찾을 수 없습니다."
+        )
+    if room.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="접근 권한이 없습니다."
+        )
+
+    async def event_generator():
+        async for event in chat_service.stream_message(body.message, chat_id, user_id):
+            yield {
+                "event": event["event"],
+                "data": json.dumps(event["data"], ensure_ascii=False),
+            }
+
+    return EventSourceResponse(event_generator())

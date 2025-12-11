@@ -5,6 +5,7 @@ from redis.asyncio import Redis
 
 from src.core.security.jwt import jwt_handler
 from src.core.config.settings import config
+from src.db.transactional import transactional
 from src.domain.user.repository import UserRepository
 from src.domain.user.service import check_password
 from src.domain.user.models import User
@@ -31,6 +32,7 @@ class AuthService:
         self.refresh_token_repository = refresh_token_repository
         self.redis_client = redis_client
 
+    @transactional
     async def login(self, email: str, password: str, device_id: str | None = None, ip_address: str | None = None) -> Optional[LoginResult]:
         """
         로그인 처리
@@ -73,7 +75,7 @@ class AuthService:
         refresh_token = jwt_handler.create_refresh_token(user_id=user.id)
 
         # 6. Refresh Token DB 저장
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expires_at = now + timedelta(days=config.JWT_REFRESH_TOKEN_EXPIRE_DAYS)
         refresh_token_entity = RefreshToken(
             user_id=user.id,
@@ -100,6 +102,7 @@ class AuthService:
             ),
         )
 
+    @transactional
     async def refresh_access_token(self, refresh_token: str) -> Optional[RefreshResponse]:
         """
         Access Token 갱신
@@ -122,7 +125,7 @@ class AuthService:
                 return None
 
             # 3. 토큰 만료 확인
-            if stored_token.expires_at < datetime.utcnow():
+            if stored_token.expires_at < datetime.now(timezone.utc):
                 logger.warning(f"Token refresh failed: token expired - user_id={user_id}")
                 await self.refresh_token_repository.delete_by_token(refresh_token)
                 return None
@@ -190,6 +193,7 @@ class AuthService:
             logger.error(f"Failed to add token to blacklist: {e}")
             return False
 
+    @transactional
     async def logout(self, access_token: str, refresh_token: str) -> bool:
         """
         로그아웃 처리
@@ -218,6 +222,7 @@ class AuthService:
             logger.error(f"Logout failed: {e}")
             return False
 
+    @transactional
     async def logout_all_devices(self, user_id: int) -> int:
         """
         모든 기기에서 로그아웃 (강제 로그아웃)

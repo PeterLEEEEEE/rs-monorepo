@@ -1,17 +1,15 @@
 from typing import Optional
 from langchain_core.tools import tool
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.db.session import session
 
 
 class PropertyTools:
     """Property Agent tools for searching articles and complex info."""
 
-    def __init__(self, session_factory):
-        self.session_factory = session_factory
-
     def get_tools(self) -> list:
-        """Return list of tools with session factory bound."""
+        """Return list of tools."""
 
         @tool
         async def search_articles(
@@ -83,10 +81,9 @@ class PropertyTools:
             """)
             params["limit"] = limit
 
-            async with self.session_factory() as session:
-                result = await session.execute(query, params)
-                rows = result.fetchall()
-                return [dict(row._mapping) for row in rows]
+            result = await session.execute(query, params)
+            rows = result.fetchall()
+            return [dict(row._mapping) for row in rows]
 
         @tool
         async def get_article_detail(
@@ -113,14 +110,13 @@ class PropertyTools:
                 WHERE complex_no = :complex_no AND article_no = :article_no
             """)
 
-            async with self.session_factory() as session:
-                result = await session.execute(
-                    query, {"complex_no": complex_no, "article_no": article_no}
-                )
-                row = result.fetchone()
-                if row:
-                    return dict(row._mapping)
-                return {"error": "매물을 찾을 수 없습니다."}
+            result = await session.execute(
+                query, {"complex_no": complex_no, "article_no": article_no}
+            )
+            row = result.fetchone()
+            if row:
+                return dict(row._mapping)
+            return {"error": "매물을 찾을 수 없습니다."}
 
         @tool
         async def get_complex_info(complex_no: str) -> dict:
@@ -150,11 +146,10 @@ class PropertyTools:
                 WHERE complex_no = :complex_no
             """)
 
-            async with self.session_factory() as session:
-                result = await session.execute(query, {"complex_no": complex_no})
-                row = result.fetchone()
-                if row:
-                    return dict(row._mapping)
-                return {"error": "단지를 찾을 수 없습니다."}
+            result = await session.execute(query, {"complex_no": complex_no})
+            row = result.fetchone()
+            if row:
+                return dict(row._mapping)
+            return {"error": "단지를 찾을 수 없습니다."}
 
         return [search_articles, get_article_detail, get_complex_info]

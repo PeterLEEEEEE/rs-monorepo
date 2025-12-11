@@ -1,7 +1,8 @@
-from typing import Optional
+from typing import Optional, AsyncIterator
 from logger import logger
 
 from src.agents import OrchestratorAgent
+from src.db.transactional import transactional
 from .base import BaseService
 from .repository import ChatRepository
 from .models import ChatRoom, ChatMessage
@@ -16,6 +17,7 @@ class ChatService(BaseService):
 
     # ============== 채팅방 관리 ==============
 
+    @transactional
     async def create_chatroom(self, user_id: str, title: str = None) -> ChatRoom:
         """채팅방 생성"""
         logger.info(f"[ChatService] Creating chatroom for user {user_id}")
@@ -98,16 +100,22 @@ class ChatService(BaseService):
             }
         }
 
+    @transactional
     async def update_chatroom(self, chat_id: str, title: str) -> ChatRoom | None:
         """채팅방 제목 수정"""
         return await self.repository.update_chatroom(chat_id, title)
 
+    @transactional
     async def delete_chatroom(self, chat_id: str) -> bool:
-        """채팅방 삭제"""
+        """채팅방 삭제 (메시지 없으면 물리삭제, 있으면 논리삭제)"""
+        message_count = await self.repository.get_message_count(chat_id)
+        if message_count == 0:
+            return await self.repository.hard_delete_chatroom(chat_id)
         return await self.repository.delete_chatroom(chat_id)
 
     # ============== 메시지 처리 ==============
 
+    @transactional
     async def send_message(
         self,
         user_input: str,
@@ -169,3 +177,82 @@ class ChatService(BaseService):
         except Exception as e:
             logger.error(f"Send message error: {e}")
             raise
+
+    async def stream_message(
+        self,
+        user_input: str,
+        chat_id: str,
+        user_id: Optional[str] = None,
+    ) -> AsyncIterator[dict]:
+        """
+        메시지 전송 및 Agent 스트리밍 호출.
+
+        SSE 이벤트 타입:
+        - user_message: 저장된 사용자 메시지 정보
+        - token: AI 응답 토큰 (스트리밍)
+        - assistant_message: 저장된 AI 메시지 정보 (완료 시)
+        - error: 에러 발생 시
+        """
+        try:
+            # 1. 기존 히스토리 조회
+            history = await self.repository.get_messages(chat_id, limit=20)
+
+            # 2. 새 turn_id 생성 및 사용자 메시지 저장
+            turn_id = await self.repository.get_next_turn_id(chat_id)
+            user_msg = await self.repository.add_message(chat_id, turn_id, "user", user_input)
+
+            # 3. 사용자 메시지 이벤트 전송
+            yield {
+                "event": "user_message",
+                "data": {
+                    "id": user_msg.id,
+                    "turn_id": user_msg.turn_id,
+                    "role": user_msg.role,
+                    "content": user_msg.content,
+                    "created_at": user_msg.created_at.isoformat(),
+                }
+            }
+
+            # 4. 히스토리를 메시지 포맷으로 변환
+            messages = [(msg.role, msg.content) for msg in history]
+            messages.append(("user", user_input))
+
+            # 5. Agent 스트리밍 호출
+            full_response = ""
+            async for token in self.orchestrator.stream_with_history(
+                messages=messages,
+                context_id=chat_id,
+                user_id=user_id,
+            ):
+                full_response += token
+                yield {
+                    "event": "token",
+                    "data": {"token": token}
+                }
+
+            # 6. AI 응답 저장 (같은 turn_id)
+            assistant_msg = await self.repository.add_message(
+                chat_id, turn_id, "assistant", full_response
+            )
+
+            # 7. 채팅방 updated_at 갱신
+            await self.repository.update_room_timestamp(chat_id)
+
+            # 8. 완료 이벤트 전송
+            yield {
+                "event": "assistant_message",
+                "data": {
+                    "id": assistant_msg.id,
+                    "turn_id": assistant_msg.turn_id,
+                    "role": assistant_msg.role,
+                    "content": assistant_msg.content,
+                    "created_at": assistant_msg.created_at.isoformat(),
+                }
+            }
+
+        except Exception as e:
+            logger.error(f"Stream message error: {e}")
+            yield {
+                "event": "error",
+                "data": {"message": str(e)}
+            }

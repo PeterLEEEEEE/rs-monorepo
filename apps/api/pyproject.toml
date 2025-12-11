@@ -41,6 +41,7 @@ dependencies = [
     "requests>=2.32.3",
     "uvicorn>=0.34.0",
     "langfuse>=2.0.0,<3.0.0",
+    "sse-starlette>=2.0.0",
 ]
 
 [dependency-groups]

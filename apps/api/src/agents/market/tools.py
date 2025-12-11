@@ -3,15 +3,14 @@ from datetime import date, timedelta
 from langchain_core.tools import tool
 from sqlalchemy import text
 
+from src.db.session import session
+
 
 class MarketTools:
     """Market Agent tools for real price analysis."""
 
-    def __init__(self, session_factory):
-        self.session_factory = session_factory
-
     def get_tools(self) -> list:
-        """Return list of tools with session factory bound."""
+        """Return list of tools."""
 
         @tool
         async def get_real_prices(
@@ -74,10 +73,9 @@ class MarketTools:
             """)
             params["limit"] = limit
 
-            async with self.session_factory() as session:
-                result = await session.execute(query, params)
-                rows = result.fetchall()
-                return [dict(row._mapping) for row in rows]
+            result = await session.execute(query, params)
+            rows = result.fetchall()
+            return [dict(row._mapping) for row in rows]
 
         @tool
         async def get_price_stats(
@@ -121,12 +119,11 @@ class MarketTools:
                 WHERE {where_clause}
             """)
 
-            async with self.session_factory() as session:
-                result = await session.execute(query, params)
-                row = result.fetchone()
-                if row:
-                    return dict(row._mapping)
-                return {"error": "통계 데이터를 찾을 수 없습니다."}
+            result = await session.execute(query, params)
+            row = result.fetchone()
+            if row:
+                return dict(row._mapping)
+            return {"error": "통계 데이터를 찾을 수 없습니다."}
 
         @tool
         async def get_price_trend(
@@ -171,9 +168,8 @@ class MarketTools:
                 ORDER BY month DESC
             """)
 
-            async with self.session_factory() as session:
-                result = await session.execute(query, params)
-                rows = result.fetchall()
-                return [dict(row._mapping) for row in rows]
+            result = await session.execute(query, params)
+            rows = result.fetchall()
+            return [dict(row._mapping) for row in rows]
 
         return [get_real_prices, get_price_stats, get_price_trend]

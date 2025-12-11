@@ -13,7 +13,6 @@ class OrchestratorAgent(BaseAgent):
     def __init__(
         self,
         llm: Any,
-        session_factory: Any,
         sub_agents: Optional[dict[AgentType, BaseAgent]] = None,
     ):
         config = AgentConfig(
@@ -21,7 +20,6 @@ class OrchestratorAgent(BaseAgent):
             description="사용자 질의를 분석하여 적절한 전문 에이전트로 라우팅하는 오케스트레이터",
         )
         super().__init__(config, llm)
-        self.session_factory = session_factory
 
         # Sub-agents는 외부에서 주입받음
         self.sub_agents = sub_agents or {}

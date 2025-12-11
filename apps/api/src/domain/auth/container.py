@@ -9,19 +9,11 @@ class AuthContainer(containers.DeclarativeContainer):
     """Auth 도메인 DI 컨테이너"""
 
     # 외부에서 주입받을 의존성
-    session_factory = providers.Dependency()
     redis_client = providers.Dependency()
 
-    # Repository
-    user_repository = providers.Singleton(
-        UserRepository,
-        session_factory=session_factory,
-    )
-
-    refresh_token_repository = providers.Singleton(
-        RefreshTokenRepository,
-        session_factory=session_factory,
-    )
+    # Repository (글로벌 session 사용, 주입 불필요)
+    user_repository = providers.Singleton(UserRepository)
+    refresh_token_repository = providers.Singleton(RefreshTokenRepository)
 
     # Service
     auth_service = providers.Singleton(

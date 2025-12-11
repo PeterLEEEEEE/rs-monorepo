@@ -12,6 +12,7 @@ from src.container import AppContainer
 from src.core.mcp import register_basic_tools
 from src.core.config import get_config
 from src.agents.a2a_server import create_a2a_router
+from src.core.middlewares import SQLAlchemyMiddleware
 
 
 @asynccontextmanager
@@ -39,6 +40,10 @@ async def combined_lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     container = AppContainer()
+
+    # DB 초기화 (글로벌 session도 함께 초기화됨)
+    container.db()
+
     app_ = FastAPI(
         title="LangGraph Realestate Agent API",
         description="FastAPI with dependency injection and A2A multi-agent support",
@@ -46,6 +51,10 @@ def create_app() -> FastAPI:
         # middleware=load_middleware,
         debug=True
     )
+
+    # SQLAlchemy 세션 미들웨어 등록
+    app_.add_middleware(SQLAlchemyMiddleware)
+
     app_.mount("/mcp", mcp_app)
     # 이 부분이 의존성 주입을 활성화
     container.wire(

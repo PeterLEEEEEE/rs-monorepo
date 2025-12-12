@@ -10,6 +10,8 @@ from .dtos import (
     MonthlyTrendItem,
     PyeongListResponse,
     PyeongSummaryItem,
+    FloorPriceResponse,
+    FloorPriceItem,
 )
 
 
@@ -137,4 +139,51 @@ class RealPriceService:
             complex_id=complex_id,
             complex_name=complex_info["complex_name"],
             pyeongs=pyeongs
+        )
+
+    async def get_floor_price(
+        self,
+        complex_id: str,
+        months: int = 24,
+        pyeong_id: Optional[str] = None
+    ) -> Optional[FloorPriceResponse]:
+        """
+        층수별 가격 데이터 조회 (산점도용)
+
+        Args:
+            complex_id: 단지 ID
+            months: 조회 기간 (개월)
+            pyeong_id: 특정 평형 필터 (선택)
+
+        Returns:
+            FloorPriceResponse or None (단지 없을 시)
+        """
+        # 1. 단지 정보 조회
+        complex_info = await self.repository.get_complex_info(complex_id)
+        if not complex_info:
+            logger.warning(f"Complex not found: {complex_id}")
+            return None
+
+        # 2. 층수별 가격 데이터 조회
+        floor_data = await self.repository.get_floor_price_data(
+            complex_id=complex_id,
+            months=months,
+            pyeong_id=pyeong_id
+        )
+
+        trades = [
+            FloorPriceItem(
+                floor=row["floor"],
+                deal_price=row["deal_price"],
+                trade_date=row["trade_date"],
+                pyeong_id=row["pyeong_id"],
+                pyeong_name2=row.get("pyeong_name2")
+            )
+            for row in floor_data
+        ]
+
+        return FloorPriceResponse(
+            complex_id=complex_id,
+            complex_name=complex_info["complex_name"],
+            trades=trades
         )

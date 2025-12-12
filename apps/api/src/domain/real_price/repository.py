@@ -138,3 +138,65 @@ class RealPriceRepository(BaseRepository):
             {"complex_id": complex_id, "pyeong_ids": pyeong_ids}
         )
         return {row["pyeong_id"]: dict(row) for row in result.mappings().all()}
+
+    async def get_floor_price_data(
+        self,
+        complex_id: str,
+        months: int = 24,
+        pyeong_id: Optional[str] = None
+    ) -> list[dict]:
+        """
+        층수별 가격 데이터 조회 (산점도용)
+
+        Args:
+            complex_id: 단지 ID
+            months: 조회 기간 (개월)
+            pyeong_id: 특정 평형 필터 (선택)
+
+        Returns:
+            개별 거래 데이터 (층수, 가격, 거래일, 평형 포함)
+        """
+        start_date = date.today() - relativedelta(months=months)
+
+        if pyeong_id:
+            query = text("""
+                SELECT
+                    r.floor,
+                    r.deal_price,
+                    r.trade_date,
+                    r.pyeong_id,
+                    p.pyeong_name2
+                FROM staging.stg_real_prices r
+                LEFT JOIN staging.stg_pyeongs p
+                    ON r.complex_id = p.complex_id AND r.pyeong_id = p.pyeong_id
+                WHERE r.complex_id = :complex_id
+                  AND r.pyeong_id = :pyeong_id
+                  AND r.trade_date >= :start_date
+                  AND r.floor IS NOT NULL
+                ORDER BY r.floor, r.trade_date
+            """)
+            params = {
+                "complex_id": complex_id,
+                "pyeong_id": pyeong_id,
+                "start_date": start_date
+            }
+        else:
+            query = text("""
+                SELECT
+                    r.floor,
+                    r.deal_price,
+                    r.trade_date,
+                    r.pyeong_id,
+                    p.pyeong_name2
+                FROM staging.stg_real_prices r
+                LEFT JOIN staging.stg_pyeongs p
+                    ON r.complex_id = p.complex_id AND r.pyeong_id = p.pyeong_id
+                WHERE r.complex_id = :complex_id
+                  AND r.trade_date >= :start_date
+                  AND r.floor IS NOT NULL
+                ORDER BY r.floor, r.trade_date
+            """)
+            params = {"complex_id": complex_id, "start_date": start_date}
+
+        result = await self.session.execute(query, params)
+        return [dict(row) for row in result.mappings().all()]

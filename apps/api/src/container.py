@@ -11,6 +11,7 @@ from src.domain.user.container import UserContainer
 from src.domain.chat.container import ChatContainer
 from src.domain.auth.container import AuthContainer
 from src.domain.real_price.container import RealPriceContainer
+from src.domain.complex.container import ComplexContainer
 from src.agents.container import AgentContainer
 
 
@@ -104,6 +105,8 @@ class AppContainer(containers.DeclarativeContainer):
     )
 
     real_price_container = providers.Container(RealPriceContainer)
+
+    complex_container = providers.Container(ComplexContainer)
 
     # # HomeContainer 구조 준비 (구현 시 주석 제거)
     # home_container = providers.Container(

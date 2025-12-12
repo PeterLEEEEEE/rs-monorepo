@@ -78,3 +78,27 @@ class PyeongListResponse(BaseModel):
     class Config:
         alias_generator = snake2camel
         populate_by_name = True
+
+
+class FloorPriceItem(BaseModel):
+    """층수별 가격 아이템 (개별 거래)"""
+    floor: int = Field(description="층수")
+    deal_price: int = Field(description="거래가 (만원)")
+    trade_date: date = Field(description="거래일")
+    pyeong_id: str = Field(description="평형 ID")
+    pyeong_name2: Optional[str] = Field(default=None, description="평형명 (평)")
+
+    class Config:
+        alias_generator = snake2camel
+        populate_by_name = True
+
+
+class FloorPriceResponse(BaseModel):
+    """층수별 가격 응답"""
+    complex_id: str = Field(description="단지 ID")
+    complex_name: str = Field(description="단지명")
+    trades: list[FloorPriceItem] = Field(description="개별 거래 목록")
+
+    class Config:
+        alias_generator = snake2camel
+        populate_by_name = True

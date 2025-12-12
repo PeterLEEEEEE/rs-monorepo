@@ -7,6 +7,8 @@ import ChatRoom from "./pages/chatroom";
 import CounterPage from "./pages/counter";
 import TodoListPage from "./pages/todo-list-page";
 import TodoDetailPage from "./pages/todo-detail-page";
+import ComplexDetailPage from "./pages/complex-detail-page";
+import MarketPage from "./pages/market-page";
 
 function AuthLayout() {
   return (
@@ -29,6 +31,10 @@ function App() {
       <Route path="/chatroom" element={<ChatRoom />} />
       <Route path="/todos" element={<TodoListPage />} />
       <Route path="/todos/:id" element={<TodoDetailPage />} />
+      <Route path="/complex" element={<ComplexDetailPage />} />
+      <Route path="/complex/:complexId" element={<ComplexDetailPage />} />
+      <Route path="/market" element={<MarketPage />} />
+      <Route path="/market/:regionCode" element={<MarketPage />} />
     </Routes>
   );
 }

@@ -5,6 +5,7 @@ from src.domain.user.controller import user_router as user_v1_router # User 라�
 from src.domain.chat.controller import chat_router
 from src.domain.auth.controller import auth_router
 from src.domain.real_price.controller import real_price_router
+from src.domain.complex.controller import complex_router
 from src.core.utils import snake2camel
 
 
@@ -38,3 +39,4 @@ router.include_router(user_v1_router)  # User 라우터 등록
 router.include_router(auth_router)  # Auth 라우터 등록
 router.include_router(chat_router)  # Chat 라우터 등록
 router.include_router(real_price_router)  # Real Price 라우터 등록
+router.include_router(complex_router)  # Complex 라우터 등록

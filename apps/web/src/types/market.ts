@@ -21,6 +21,7 @@ export interface RegionPriceChange {
   prevAvgPrice: number | null;
   changeRate: number | null;
   tradeCount: number;
+  complexCount: number;
 }
 
 export interface RegionPriceOverviewResponse {

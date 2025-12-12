@@ -41,8 +41,9 @@ class RegionPriceChange(BaseModel):
     region_name: str = Field(description="지역명")
     current_avg_price: Optional[int] = Field(default=None, description="현재 평균가 (만원)")
     prev_avg_price: Optional[int] = Field(default=None, description="이전 평균가 (만원)")
-    change_rate: Optional[float] = Field(default=None, description="변동률 (%)")
+    change_rate: Optional[float] = Field(default=None, description="변동률 (%, 단지별 상승률 평균)")
     trade_count: int = Field(default=0, description="거래 건수")
+    complex_count: int = Field(default=0, description="거래가 있는 단지 수")
 
     class Config:
         alias_generator = snake2camel

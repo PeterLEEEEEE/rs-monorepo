@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -10,6 +11,15 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { getRegionPriceOverview, getRegionDetail } from "@/api/market";
+
+// 기간 옵션
+const PERIOD_OPTIONS = [
+  { value: "1w", label: "1주일" },
+  { value: "1m", label: "1개월" },
+  { value: "3m", label: "3개월" },
+  { value: "6m", label: "6개월" },
+  { value: "1y", label: "1년" },
+];
 
 // 가격 포맷팅 (만원 -> 억)
 function formatPrice(price: number): string {
@@ -43,11 +53,12 @@ function formatXAxis(month: string, index: number): string {
 
 export default function MarketPage() {
   const { regionCode } = useParams<{ regionCode: string }>();
+  const [selectedPeriod, setSelectedPeriod] = useState("3m");
 
   // 지역별 가격 변동 개요 조회
   const { data: overviewData, isLoading: isOverviewLoading } = useQuery({
-    queryKey: ["regionPriceOverview", 3],
-    queryFn: () => getRegionPriceOverview(3),
+    queryKey: ["regionPriceOverview", selectedPeriod],
+    queryFn: () => getRegionPriceOverview(selectedPeriod),
     enabled: !regionCode,
   });
 
@@ -113,7 +124,7 @@ export default function MarketPage() {
                       />
                       <Tooltip
                         formatter={(value: number) => [formatPrice(value), "평균가"]}
-                        labelFormatter={(label) => {
+                        labelFormatter={(label: string) => {
                           const [year, month] = label.split("-");
                           return `${year}년 ${month}월`;
                         }}
@@ -170,7 +181,7 @@ export default function MarketPage() {
                       />
                       <Tooltip
                         formatter={(value: number) => [`${value}건`, "거래량"]}
-                        labelFormatter={(label) => {
+                        labelFormatter={(label: string) => {
                           const [year, month] = label.split("-");
                           return `${year}년 ${month}월`;
                         }}
@@ -212,7 +223,32 @@ export default function MarketPage() {
         </Link>
       </nav>
 
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">지역별 시세</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">지역별 시세</h1>
+
+        {/* 기간 선택기 */}
+        <div className="flex gap-1 rounded-lg border bg-gray-100 p-1">
+          {PERIOD_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => setSelectedPeriod(option.value)}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                selectedPeriod === option.value
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {overviewData && (
+        <p className="mb-4 text-sm text-gray-500">
+          {overviewData.period} 전 대비 변동률 (단지별 상승률 평균)
+        </p>
+      )}
 
       {isOverviewLoading ? (
         <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -254,7 +290,7 @@ export default function MarketPage() {
                   : "데이터 없음"}
               </p>
               <p className="mt-0.5 text-xs text-gray-400">
-                거래 {region.tradeCount.toLocaleString()}건
+                {region.complexCount}개 단지 | 거래 {region.tradeCount.toLocaleString()}건
               </p>
             </Link>
           ))}

@@ -26,17 +26,21 @@ async def get_region_list(
 @market_router.get("/overview", response_model=RegionPriceOverviewResponse)
 @inject
 async def get_region_price_overview(
-    months: int = Query(default=3, ge=1, le=12, description="비교 기간 (개월)"),
+    period: str = Query(
+        default="3m",
+        regex="^(1w|1m|3m|6m|1y)$",
+        description="비교 기간 (1w: 1주일, 1m: 1개월, 3m: 3개월, 6m: 6개월, 1y: 1년)"
+    ),
     service: MarketService = Depends(Provide["market_container.market_service"]),
 ):
     """
     지역별 가격 변동 개요 조회
 
-    - months: 비교 기간 (기본 3개월)
-    - 각 지역별 현재/이전 평균가, 변동률 반환
+    - period: 비교 기간 (1w, 1m, 3m, 6m, 1y)
+    - 각 지역별 현재/이전 평균가, 변동률 반환 (단지별 상승률 평균)
     - 변동률 기준 내림차순 정렬
     """
-    return await service.get_region_price_overview(months=months)
+    return await service.get_region_price_overview(period=period)
 
 
 @market_router.get("/{region_code}", response_model=RegionDetailResponse)

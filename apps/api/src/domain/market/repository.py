@@ -29,63 +29,73 @@ class MarketRepository(BaseRepository):
 
         return [dict(row) for row in rows]
 
-    async def get_region_price_overview(self, months: int = 3) -> list[dict]:
+    async def get_region_price_overview(self, period: str = "3m") -> list[dict]:
         """
-        지역별 가격 변동 개요 조회
+        지역별 가격 변동 개요 조회 (단지별 상승률의 평균)
 
         Args:
-            months: 비교 기간 (기본 3개월)
+            period: 비교 기간 (1w: 1주일, 1m: 1개월, 3m: 3개월, 6m: 6개월, 1y: 1년)
 
         Returns:
-            지역별 현재/이전 평균가, 변동률
+            지역별 현재/이전 평균가, 변동률 (단지별 상승률 평균)
         """
-        current_start = date.today() - relativedelta(months=months)
-        prev_start = current_start - relativedelta(months=months)
+        # 기간 파싱
+        period_map = {
+            "1w": relativedelta(weeks=1),
+            "1m": relativedelta(months=1),
+            "3m": relativedelta(months=3),
+            "6m": relativedelta(months=6),
+            "1y": relativedelta(years=1),
+        }
+        delta = period_map.get(period, relativedelta(months=3))
+
+        current_start = date.today() - delta
+        prev_start = current_start - delta
         prev_end = current_start - relativedelta(days=1)
 
         query = text("""
-            WITH region_prices AS (
+            WITH complex_prices AS (
+                -- 단지별 현재/이전 기간 평균가 계산
                 SELECT
                     reg.region_code,
                     reg.region_name,
-                    rp.deal_price,
-                    rp.trade_date
+                    rp.complex_id,
+                    ROUND(AVG(CASE WHEN rp.trade_date >= :current_start THEN rp.deal_price END))::INTEGER as current_price,
+                    ROUND(AVG(CASE WHEN rp.trade_date >= :prev_start AND rp.trade_date <= :prev_end THEN rp.deal_price END))::INTEGER as prev_price,
+                    COUNT(CASE WHEN rp.trade_date >= :current_start THEN 1 END) as current_trade_count
                 FROM staging.stg_real_prices rp
                 JOIN staging.stg_complexes c ON rp.complex_id = c.complex_id
                 JOIN staging.stg_regions reg ON LEFT(c.address_id, 5) || '00000' = reg.region_id
                 WHERE rp.trade_date >= :prev_start
+                GROUP BY reg.region_code, reg.region_name, rp.complex_id
+                HAVING COUNT(CASE WHEN rp.trade_date >= :current_start THEN 1 END) > 0
             ),
-            current_period AS (
+            complex_change_rates AS (
+                -- 단지별 상승률 계산
                 SELECT
                     region_code,
                     region_name,
-                    ROUND(AVG(deal_price))::INTEGER as avg_price,
-                    COUNT(*) as trade_count
-                FROM region_prices
-                WHERE trade_date >= :current_start
-                GROUP BY region_code, region_name
-            ),
-            prev_period AS (
-                SELECT
-                    region_code,
-                    ROUND(AVG(deal_price))::INTEGER as avg_price
-                FROM region_prices
-                WHERE trade_date >= :prev_start AND trade_date <= :prev_end
-                GROUP BY region_code
+                    complex_id,
+                    current_price,
+                    prev_price,
+                    current_trade_count,
+                    CASE
+                        WHEN prev_price > 0 AND current_price IS NOT NULL
+                        THEN ((current_price - prev_price)::NUMERIC / prev_price * 100)
+                        ELSE NULL
+                    END as change_rate
+                FROM complex_prices
             )
             SELECT
-                c.region_code,
-                c.region_name,
-                c.avg_price as current_avg_price,
-                p.avg_price as prev_avg_price,
-                c.trade_count,
-                CASE
-                    WHEN p.avg_price > 0 AND c.avg_price IS NOT NULL
-                    THEN ROUND(((c.avg_price - p.avg_price)::NUMERIC / p.avg_price * 100), 2)
-                    ELSE NULL
-                END as change_rate
-            FROM current_period c
-            LEFT JOIN prev_period p ON c.region_code = p.region_code
+                region_code,
+                region_name,
+                ROUND(AVG(current_price))::INTEGER as current_avg_price,
+                ROUND(AVG(prev_price))::INTEGER as prev_avg_price,
+                SUM(current_trade_count)::INTEGER as trade_count,
+                COUNT(DISTINCT complex_id)::INTEGER as complex_count,
+                ROUND(AVG(change_rate), 2) as change_rate
+            FROM complex_change_rates
+            GROUP BY region_code, region_name
             ORDER BY change_rate DESC NULLS LAST
         """)
 
@@ -103,7 +113,8 @@ class MarketRepository(BaseRepository):
                 "current_avg_price": row["current_avg_price"],
                 "prev_avg_price": row["prev_avg_price"],
                 "change_rate": float(row["change_rate"]) if row["change_rate"] is not None else None,
-                "trade_count": row["trade_count"] or 0
+                "trade_count": row["trade_count"] or 0,
+                "complex_count": row["complex_count"] or 0
             }
             for row in rows
         ]

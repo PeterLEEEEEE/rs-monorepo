@@ -17,10 +17,10 @@ export async function getRegionList(): Promise<RegionListResponse> {
 }
 
 export async function getRegionPriceOverview(
-  months: number = 3
+  period: string = "3m"
 ): Promise<RegionPriceOverviewResponse> {
   const params = new URLSearchParams({
-    months: months.toString(),
+    period,
   });
 
   const response = await fetch(`${API_URL}/market/overview?${params}`);
